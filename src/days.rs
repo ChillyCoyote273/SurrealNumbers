@@ -1,5 +1,4 @@
 use crate::surreal::Surreal;
-use std::ops::Deref;
 use std::rc::Rc;
 
 pub struct Numbers {
@@ -28,7 +27,7 @@ impl Numbers {
         &self.numbers[(1 << day) - 1 + index]
     }
 
-    pub fn get_ordered(&self, index: usize) -> &Surreal {
+    pub fn get_ordered(&self, index: usize) -> Rc<Surreal> {
         assert!(
             index < self.numbers.len(),
             "index {} is out of range",
@@ -39,27 +38,33 @@ impl Numbers {
 
         let idx = (1 << day) - 1 + index >> day_height;
 
-        &self.numbers[idx]
+        self.numbers[idx].clone()
     }
 
     pub fn next_day(&mut self) {
-        self.numbers.reserve(self.numbers.len() + 1);
+        let mut new_numbers = Vec::with_capacity(self.numbers.len() + 1);
         let range = 0..(self.numbers.len() as i64);
         for i in 0..=(self.numbers.len() as i64) {
             let first = i - 1;
             let second = i;
-            self.numbers.push(Rc::new(Surreal::new(
+            new_numbers.push(Rc::new(Surreal::new(
                 if range.contains(&first) {
-                    Some(self.numbers[first as usize].clone())
+                    Some(self.get_ordered(first as usize))
                 } else {
                     None
                 },
                 if range.contains(&second) {
-                    Some(self.numbers[second as usize].clone())
+                    Some(self.get_ordered(second as usize))
                 } else {
                     None
                 },
             )));
+            println!("{}", self.numbers.last().unwrap());
         }
+        self.numbers.append(&mut new_numbers);
+    }
+
+    pub fn len(&self) -> usize {
+        self.numbers.len()
     }
 }
